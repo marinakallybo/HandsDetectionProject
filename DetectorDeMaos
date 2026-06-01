@@ -1,0 +1,134 @@
+import cv2
+import mediapipe as mp
+from mediapipe.tasks import python
+from mediapipe.tasks.python import vision
+from mediapipe.framework.formats import landmark_pb2
+import urllib.request
+import os
+
+
+def baixar_modelo():
+    """Baixa o modelo do hand landmarker se não existir"""
+    url = "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task"
+    caminho = r"C:\Users\miche\hand_landmarker.task"
+    if not os.path.exists(caminho):
+        print("Baixando modelo...")
+        urllib.request.urlretrieve(url, caminho)
+        print("Modelo baixado!")
+    return caminho
+
+
+class DetectorMaos:
+    """Classe responsável pela detecção das mãos"""
+    def __init__(self, max_maos=2, deteccao_confianca=0.5,
+                 rastreio_confianca=0.5, cor_pontos=(0, 0, 255), cor_conexoes=(255, 255, 255)):
+
+        """
+        Função responsável por inicializar a classe.
+        :param max_maos: Quantidade máxima de mãos para serem detectadas.
+        :param deteccao_confianca: Percentual da taxa de detecção da mão. Se for menos do que este limite,
+        a detecção não ocorre.
+        :param rastreio_confianca: Percentual da taxa de rastreio dos pontos da mão. Se for menos que esta
+        limite, o rastreio dos pontos não é realizado.
+        :param cor_pontos: Cor dos pontos.
+        :param cor_conexoes: Cor das conexões.
+        """
+
+        # --- Inicializar os parâmetros --- #
+        self.cor_pontos = cor_pontos
+        self.cor_conexoes = cor_conexoes
+        self.resultado = None
+        self.frame_num = 0
+
+        # --- Baixar e carregar o modelo --- #
+        caminho_modelo = baixar_modelo()
+
+        # --- Inicializar o detector com a nova API --- #
+        base_options = python.BaseOptions(model_asset_path=caminho_modelo)
+        options = vision.HandLandmarkerOptions(
+            base_options=base_options,
+            num_hands=max_maos,
+            min_hand_detection_confidence=deteccao_confianca,
+            min_tracking_confidence=rastreio_confianca,
+            running_mode=vision.RunningMode.VIDEO
+        )
+        self.detector = vision.HandLandmarker.create_from_options(options)
+
+        # --- Inicializar os módulos de detecção das mãos --- #
+        self.maos_mp = mp.solutions.hands
+
+        # --- Função para desenhar os pontos nas mãos --- #
+        self.desenho_mp = mp.solutions.drawing_utils
+
+
+    def encontrar_maos(self, imagem, desenho=True):
+        """
+        Função responsável por detectar a(s) mão(s).
+        :param imagem: Imagem capturada.
+        :param desenho: Desenhar os pontos e as conexões na(s) mão(s)
+        :return: Retorna a imagem com a detecção.
+        """
+
+        # --- Converter a imagem de BGR para RGB --- #
+        imagem_rgb = cv2.cvtColor(imagem, cv2.COLOR_BGR2RGB)
+
+        # --- Passar a imagem convertida para o detector --- #
+        mp_imagem = mp.Image(image_format=mp.ImageFormat.SRGB, data=imagem_rgb)
+        self.frame_num += 1
+        self.resultado = self.detector.detect_for_video(mp_imagem, self.frame_num)
+
+        # --- Verificar se alguma mão foi detectada --- #
+        if desenho and self.resultado.hand_landmarks:
+            for landmarks in self.resultado.hand_landmarks:
+
+                # Converter para o formato do drawing_utils
+                hand_landmarks_proto = landmark_pb2.NormalizedLandmarkList()
+                hand_landmarks_proto.landmark.extend([
+                    landmark_pb2.NormalizedLandmark(x=lm.x, y=lm.y, z=lm.z)
+                    for lm in landmarks
+                ])
+
+                # --- Desenhar os pontos e conexões na mão --- #
+                self.desenho_mp.draw_landmarks(
+                    imagem,
+                    hand_landmarks_proto,
+                    self.maos_mp.HAND_CONNECTIONS,
+                    self.desenho_mp.DrawingSpec(color=self.cor_pontos),
+                    self.desenho_mp.DrawingSpec(color=self.cor_conexoes)
+                )
+
+        # retorna imagem
+        return imagem
+
+
+def main():
+    # capturar o vídeo pela webcam
+    cap = cv2.VideoCapture(0)
+
+    # --- Instanciar a classe do detector --- #
+    detector = DetectorMaos()
+
+    # realizar a captura
+    while True:
+        # obtenção da imagem
+        _, imagem = cap.read()
+
+        # inverter a imagem
+        imagem = cv2.flip(imagem, 1)
+
+        # --- Realizar a detecção das mãos --- #
+        imagem = detector.encontrar_maos(imagem)
+
+        # mostrar a imagem de captura
+        cv2.imshow('Captura', imagem)
+
+        # tempo de att da captura — pressione 'q' para sair
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
+
+
+if __name__ == '__main__':
+    main()
