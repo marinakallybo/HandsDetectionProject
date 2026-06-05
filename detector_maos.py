@@ -182,7 +182,7 @@ class DetectorMaos:
 
         # --- Distância da pinça (barra de progresso) --- #
         if distancia is not None:
-            limiar = 47
+            limiar = self.LIMIAR_PINCA
             barra_x = largura - 220
             cv2.putText(imagem, 'PINCA', (barra_x, 20),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.45, (180, 180, 180), 1)

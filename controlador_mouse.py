@@ -1,6 +1,5 @@
 import pyautogui
 import time
-from collections import deque
 
 pyautogui.FAILSAFE = False  # desativa a trava de mover para o canto
 
@@ -32,6 +31,9 @@ class ControladorMouse:
         # --- Congelamento durante pinça --- #
         self.cursor_congelado = False
         self.pos_congelada = (0, 0)  # posição onde o cursor fica congelado
+        
+        # Valor ajustado para melhorar o clique
+        self.LIMIAR_PINCA = 47
 
 
 
@@ -83,7 +85,7 @@ class ControladorMouse:
         """
         agora = time.time()
 
-        if distancia and distancia < self.limiar_pinca:
+        if distancia and distancia < self.LIMIAR_PINCA:
             if not self.clicando and (agora - self.ultimo_clique) > 0.5:
                 pyautogui.click()
                 self.clicando = True
