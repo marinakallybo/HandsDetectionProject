@@ -1,41 +1,42 @@
 # 🖐 HandsDetectionProject
 
-🇧🇷 [Versão em Português](README.pt-br.md)
+🇺🇸 [English version](README.en.md)
 
-Control your computer using only hand gestures — no mouse needed. This project uses computer vision to detect hand landmarks in real time and translate them into mouse movements, clicks, and scrolling.
+Controle o computador usando apenas gestos das mãos — sem mouse. Este projeto usa visão computacional para detectar os pontos de referência da mão em tempo real e traduzi-los em movimentos do cursor, cliques, scroll e até desenho.
 
-> Built with MediaPipe, OpenCV, and PyAutoGUI.
+> Desenvolvido com MediaPipe, OpenCV e PyAutoGUI.
 
 ---
 
-<!-- Add a demo gif here after recording -->
+<!-- Adicione um gif de demonstração aqui depois de gravar -->
 <!-- ![Demo](assets/demo.gif) -->
 
 ---
 
-## ✨ Features
+## ✨ Funcionalidades
 
-- **Mouse control** — move the cursor using your index finger
-- **Click** — pinch gesture (thumb + index finger)
-- **Scroll** — raise index and middle fingers, move hand up/down
-- **Smooth movement** — exponential moving average (EMA) to reduce cursor tremor
-- **Cursor freeze** — cursor locks in place while pinch gesture is forming, preventing misclicks
-- **HUD overlay** — live mode indicator and pinch progress bar on the camera feed
+- **Controle do mouse** — move o cursor com o dedo indicador
+- **Clique** — gesto de pinça (polegar + indicador)
+- **Scroll** — levanta indicador e médio, move a mão para cima/baixo
+- **Modo pintura** — alterna com `P`; levanta o indicador para desenhar, pinça para clicar
+- **Movimento suavizado** — média móvel exponencial (EMA) para reduzir o tremor do cursor
+- **Congelamento do cursor** — o cursor trava enquanto o gesto de pinça está se formando, evitando cliques acidentais
+- **HUD na câmera** — indicador do modo atual e barra de progresso da pinça em tempo real
 
 ---
 
-## 🗂 Project Structure
+## 🗂 Estrutura do Projeto
 
 ```
 HandsDetectionProject/
-├── main.py                 # Entry point
-├── detector_maos.py        # Hand detection and drawing logic
-├── controlador_mouse.py    # Mouse control logic
+├── main.py                 # Ponto de entrada e loop principal
+├── detector_maos.py        # Detecção de mãos, desenho de landmarks e HUD
+├── controlador_mouse.py    # Controle do mouse, scroll, clique e pintura
 ├── requirements.txt
 ├── README.md
 ├── README.pt-br.md
 ├── models/
-│    └── hand_landmarker.task   # Auto-downloaded on first run
+│    └── hand_landmarker.task   # Baixado automaticamente na primeira execução
 └── assets/
      ├── demo.gif
      └── screenshot.png
@@ -43,15 +44,15 @@ HandsDetectionProject/
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Como Rodar
 
-### 1. Clone the repository
+### 1. Clone o repositório
 ```bash
-git clone https://github.com/your-username/HandsDetectionProject.git
+git clone https://github.com/seu-usuario/HandsDetectionProject.git
 cd HandsDetectionProject
 ```
 
-### 2. Create and activate a virtual environment
+### 2. Crie e ative o ambiente virtual
 ```bash
 python -m venv myvenv
 
@@ -62,61 +63,66 @@ myvenv\Scripts\activate
 source myvenv/bin/activate
 ```
 
-### 3. Install dependencies
+### 3. Instale as dependências
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Run
+### 4. Execute
 ```bash
 python main.py
 ```
 
-> The MediaPipe hand landmark model (~9MB) will be downloaded automatically on the first run.
+> O modelo de detecção do MediaPipe (~9MB) será baixado automaticamente na primeira execução.
 
 ---
 
-## 🤚 Gesture Reference
+## 🤚 Referência de Gestos
 
-| Gesture | Action |
-|---|---|
-| Index finger up | Move cursor |
-| Thumb + index pinch | Left click |
-| Index + middle fingers up | Scroll mode |
-| Hand up (scroll mode) | Scroll up |
-| Hand down (scroll mode) | Scroll down |
+| Gesto | Modo | Ação |
+|---|---|---|
+| Indicador levantado | Mouse | Mover cursor |
+| Pinça polegar + indicador | Mouse | Clique esquerdo |
+| Indicador + médio levantados | Mouse | Modo scroll |
+| Mão para cima (modo scroll) | Mouse | Scroll para cima |
+| Mão para baixo (modo scroll) | Mouse | Scroll para baixo |
+| Pressionar `P` | — | Alternar modo pintura |
+| Indicador levantado | Pintura | Desenhar |
+| Pinça polegar + indicador | Pintura | Clique esquerdo |
+| Abaixar indicador | Pintura | Parar de desenhar |
 
 ---
 
-## ⚙️ Configuration
+## ⚙️ Configuração
 
-You can tweak the controller parameters in `main.py`:
+Você pode ajustar os parâmetros do controlador em `main.py`:
 
 ```python
 controlador = ControladorMouse(
     largura_cam,
     altura_cam,
-    margem=100,       # Active zone margin in pixels (excludes camera edges)
-    limiar_pinca=40,  # Pinch distance threshold in pixels
+    margem=100,       # Margem da zona ativa em pixels (exclui bordas da câmera)
+    limiar_pinca=47,  # Distância limite da pinça em pixels
 )
 ```
 
-And the smoothing factor in `controlador_mouse.py`:
+E o fator de suavização em `controlador_mouse.py`:
 
 ```python
-self.alpha = 0.17  # Lower = smoother but slower (range: 0.1 – 0.4)
+self.alpha = 0.17   # Modo mouse: menor = mais suave mas mais lento (range: 0.1 – 0.4)
+self.alpha = 0.55   # Modo pintura: maior = mais responsivo para desenhar
 ```
 
 ---
 
-## 🛠 Tech Stack
+## 🛠 Tecnologias
 
-- [MediaPipe](https://mediapipe.dev/) — hand landmark detection
-- [OpenCV](https://opencv.org/) — video capture and image drawing
-- [PyAutoGUI](https://pyautogui.readthedocs.io/) — mouse control
+- [MediaPipe](https://mediapipe.dev/) — detecção de landmarks da mão
+- [OpenCV](https://opencv.org/) — captura de vídeo e desenho na imagem
+- [PyAutoGUI](https://pyautogui.readthedocs.io/) — controle do mouse
 
 ---
 
-## 📄 License
+## 📄 Licença
 
-MIT License. Feel free to use, modify, and distribute.
+Licença MIT. Sinta-se livre para usar, modificar e distribuir.
