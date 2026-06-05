@@ -174,6 +174,10 @@ class DetectorMaos:
         elif modo == 'pinca':
             texto_modo = '[ CLIQUE ]'
             cor_modo = (0, 255, 0)     # verde
+            
+        elif modo == 'pintura':
+            texto_modo = '[ PINTURA ]'
+            cor_modo = (255, 100, 200) # rosa
         else:
             texto_modo = '[ MOUSE ]'
             cor_modo = (255, 255, 255) # branco

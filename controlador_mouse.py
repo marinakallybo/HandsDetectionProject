@@ -46,40 +46,60 @@ class ControladorMouse:
         :param posicoes: Lista de dicts retornada por encontrar_posicoes().
         :param distancia: Distância entre os landmarks 4 e 8.
         """
+        
         p = next((p for p in posicoes if p['id'] == 8), None)
         if not p:
             return
-        
-        # Congela o cursor quando a pinça está fechada
-        zona_congelamento = self.limiar_pinca * 1.4 # começa a congelar cerca de 40% antes do limiar de clique
-        if distancia and distancia < zona_congelamento:
-            if not self.cursor_congelado:
-                self.cursor_congelado = True
-                self.pos_congelada = pyautogui.position()  # salva posição atual do cursor
-            pyautogui.moveTo(*self.pos_congelada)  # mantém o cursor congelado
-            return
-        
-        self.cursor_congelado = False  # descongela quando a pinça abre
 
-        # Limita o ponto dentro da zona ativa (exclui bordas)
-        x_cam = max(self.margem, min(p['x'], self.larg_cam - self.margem))
-        y_cam = max(self.margem, min(p['y'], self.alt_cam - self.margem))
+        zona_congelamento = self.limiar_pinca * 1.4
 
-        # Mapeia zona ativa da câmera para a tela inteira
-        x_tela = int((x_cam - self.margem) /
-                     (self.larg_cam - 2 * self.margem) * self.larg_tela)
-        y_tela = int((y_cam - self.margem) /
-                     (self.alt_cam - 2 * self.margem) * self.alt_tela)
+        if self.modo_pintura:
+            # --- Modo pintura: move sempre, clica e arrasta na pinça --- #
+            x_cam = max(self.margem, min(p['x'], self.larg_cam - self.margem))
+            y_cam = max(self.margem, min(p['y'], self.alt_cam - self.margem))
+            x_tela = int((x_cam - self.margem) / (self.larg_cam - 2 * self.margem) * self.larg_tela)
+            y_tela = int((y_cam - self.margem) / (self.alt_cam - 2 * self.margem) * self.alt_tela)
 
-        # Smoothing: Aplica suavização à posição
-        if self.x_suave is None:
-            self.x_suave = x_tela  # inicializa na primeira posição
-            self.y_suave = y_tela
+            if self.x_suave is None:
+                self.x_suave, self.y_suave = x_tela, y_tela
+            else:
+                self.x_suave = int(self.alpha * x_tela + (1 - self.alpha) * self.x_suave)
+                self.y_suave = int(self.alpha * y_tela + (1 - self.alpha) * self.y_suave)
+
+            if distancia and distancia < self.limiar_pinca:
+                if not self.pintando:
+                    pyautogui.mouseDown()  # pressiona e segura
+                    self.pintando = True
+                pyautogui.moveTo(self.x_suave, self.y_suave)
+            else:
+                if self.pintando:
+                    pyautogui.mouseUp()    # solta o botão
+                    self.pintando = False
+                pyautogui.moveTo(self.x_suave, self.y_suave)
+
         else:
-            self.x_suave = int(self.alpha * x_tela + (1 - self.alpha) * self.x_suave)
-            self.y_suave = int(self.alpha * y_tela + (1 - self.alpha) * self.y_suave)
+            # --- Modo mouse normal (código atual) --- #
+            if distancia and distancia < zona_congelamento:
+                if not self.cursor_congelado:
+                    self.cursor_congelado = True
+                    self.pos_congelada = pyautogui.position()
+                pyautogui.moveTo(*self.pos_congelada)
+                return
 
-        pyautogui.moveTo(self.x_suave, self.y_suave)
+            self.cursor_congelado = False
+
+            x_cam = max(self.margem, min(p['x'], self.larg_cam - self.margem))
+            y_cam = max(self.margem, min(p['y'], self.alt_cam - self.margem))
+            x_tela = int((x_cam - self.margem) / (self.larg_cam - 2 * self.margem) * self.larg_tela)
+            y_tela = int((y_cam - self.margem) / (self.alt_cam - 2 * self.margem) * self.alt_tela)
+
+            if self.x_suave is None:
+                self.x_suave, self.y_suave = x_tela, y_tela
+            else:
+                self.x_suave = int(self.alpha * x_tela + (1 - self.alpha) * self.x_suave)
+                self.y_suave = int(self.alpha * y_tela + (1 - self.alpha) * self.y_suave)
+
+            pyautogui.moveTo(self.x_suave, self.y_suave)
 
     def verificar_clique(self, distancia):
         """

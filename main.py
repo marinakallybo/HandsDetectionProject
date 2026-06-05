@@ -45,7 +45,9 @@ def main():
              # --- Determina o modo para o HUD --- #
             if em_scroll:
                 modo = 'scroll'
-            elif distancia and distancia < 47:
+            elif controlador.modo_pintura:
+                modo = 'pintura'
+            elif distancia and distancia < controlador.limiar_pinca:
                 modo = 'pinca'
             else:
                 modo = 'mouse'
@@ -59,9 +61,12 @@ def main():
         # mostrar a imagem de captura
         cv2.imshow('Captura', imagem)
 
-        # tempo de att da captura — pressione 'q' para sair
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        # tempo de att da captura — pressione 'q' para sair e 'p' para alternar modo pintura
+        tecla = cv2.waitKey(1) & 0xFF
+        if tecla == ord('q'):
             break
+        elif tecla == ord('p'):
+            controlador.alternar_modo_pintura()
         
         
     cap.release() ## Libera a captura de vídeo, ou seja, libera a webcam para que outros programas possam usá-la e para encerrar a captura de forma adequada.
