@@ -42,7 +42,11 @@ def main():
             
             if not em_scroll:  # só move o mouse se não estiver scrollando
                 controlador.mover(posicoes, distancia)
-                controlador.verificar_clique(distancia)
+                if controlador.modo_pintura:
+                    controlador.verificar_pintura(posicoes)
+                    controlador.verificar_clique(distancia) # pinça ainda clica nesse modo
+                else:
+                    controlador.verificar_clique(distancia)
                 
              # --- Determina o modo para o HUD --- #
             if em_scroll:

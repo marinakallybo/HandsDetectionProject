@@ -66,16 +66,7 @@ class ControladorMouse:
                 self.x_suave = int(self.alpha * x_tela + (1 - self.alpha) * self.x_suave)
                 self.y_suave = int(self.alpha * y_tela + (1 - self.alpha) * self.y_suave)
 
-            if distancia and distancia < self.limiar_pinca:
-                if not self.pintando:
-                    pyautogui.mouseDown()  # pressiona e segura
-                    self.pintando = True
-                pyautogui.moveTo(self.x_suave, self.y_suave)
-            else:
-                if self.pintando:
-                    pyautogui.mouseUp()    # solta o botão
-                    self.pintando = False
-                pyautogui.moveTo(self.x_suave, self.y_suave)
+            pyautogui.moveTo(self.x_suave, self.y_suave)
 
         else:
             # --- Modo mouse normal (código atual) --- #
@@ -154,8 +145,41 @@ class ControladorMouse:
 
         return False  # não está em modo scroll
     
+    
+    
+    def verificar_pintura(self, posicoes):
+        """
+        Ativa o desenho quando só o indicador está levantado.
+        Indicador levantado = ponta (8) acima da base (6).
+        Médio abaixado = ponta (12) abaixo da base (10).
+        """
+        if not self.modo_pintura:
+            return
+
+        p8  = next((p for p in posicoes if p['id'] == 8),  None)
+        p6  = next((p for p in posicoes if p['id'] == 6),  None)
+        p12 = next((p for p in posicoes if p['id'] == 12), None)
+        p10 = next((p for p in posicoes if p['id'] == 10), None)
+
+        if not all([p8, p6, p12, p10]):
+            return
+
+        indicador_levantado = p8['y'] < p6['y']
+        medio_abaixado      = p12['y'] > p6['y']  # médio dobrado = não está desenhando
+
+        if indicador_levantado and medio_abaixado:
+            if not self.pintando:
+                pyautogui.mouseDown()
+                self.pintando = True
+        else:
+            if self.pintando:
+                pyautogui.mouseUp()
+                self.pintando = False
+
+            
+    
     def alternar_modo_pintura(self):
         self.modo_pintura = not self.modo_pintura
         self.pintando = False  # reseta estado ao trocar
         # cursos mais responsivo para desenhar, mais suave para o mouse normal
-        self.alpha = 0.4 if self.modo_pintura else 0.17
+        self.alpha = 0.55 if self.modo_pintura else 0.18
