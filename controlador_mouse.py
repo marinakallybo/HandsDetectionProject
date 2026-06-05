@@ -157,3 +157,5 @@ class ControladorMouse:
     def alternar_modo_pintura(self):
         self.modo_pintura = not self.modo_pintura
         self.pintando = False  # reseta estado ao trocar
+        # cursos mais responsivo para desenhar, mais suave para o mouse normal
+        self.alpha = 0.4 if self.modo_pintura else 0.17

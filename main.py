@@ -36,7 +36,9 @@ def main():
             imagem = detector.desenhar_nomes_dedos(imagem, posicoes)
             distancia = detector.calcular_distancia(posicoes, 4, 8)
             
-            em_scroll = controlador.verificar_scroll(posicoes)  # checa scroll primeiro
+            em_scroll = False
+            if not controlador.modo_pintura:
+                em_scroll = controlador.verificar_scroll(posicoes)
             
             if not em_scroll:  # só move o mouse se não estiver scrollando
                 controlador.mover(posicoes, distancia)
