@@ -1,6 +1,6 @@
 # 🖐 HandsDetectionProject
 
-🇧🇷 [Versão em Português](README.pt-br.md)
+🇧🇷 [Versão em Português](README.md)
 
 Control your computer using only hand gestures — no mouse needed. This project uses computer vision to detect hand landmarks in real time and translate them into mouse movements, clicks, scrolling, and even drawing.
 
