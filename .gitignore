@@ -1,4 +1,5 @@
 myvenv/
-hand_landmarker.task
+*.task
 __pycache__/
 *.pyc
+teste.py

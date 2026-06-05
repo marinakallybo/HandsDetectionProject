@@ -5,6 +5,8 @@ from mediapipe.tasks.python import vision ## Entra em media.taks.python e pega s
 from mediapipe.framework.formats import landmark_pb2 ## Entra em mediapipe.framework.formats e pega o módulo landmark_pb2, que é usado para lidar com os pontos de referência das mãos
 import urllib.request ## Biblioteca nativa do Python para fazer requisições de internet. Usada aqui para baixar o modelo de detecção de mãos se ele não estiver presente no sistema.
 import os ## Biblioteca nativa do Python para interagir com o sistema operacional, usada aqui para verificar se o modelo de detecção de mãos já existe no sistema antes de baixá-lo.
+import math
+from ControladorMouse import ControladorMouse
 
 ## Essa função abaixo é responsável por: Verificar se o modelo já existe -> Se não existir -> Baixar o modelo automaticamente -> Retornar o caminho do arquivo
 def baixar_modelo(): 
@@ -21,6 +23,11 @@ def baixar_modelo():
 
 class DetectorMaos:
     """Classe responsável pela detecção das mãos"""
+    
+    NOMES_DEDOS = {
+        4: "Polegar", 8: "Indicador", 12: "Medio", 16: "Anelar", 20: "Minimo"
+    }
+    
     ## __init__ is a special built-in method used as an initializer to set up a new object's attributes when a class is instantiated.
     def __init__(self, max_maos=2, deteccao_confianca=0.5,
                  rastreio_confianca=0.5, cor_pontos=(0, 0, 255), cor_conexoes=(255, 255, 255)):
@@ -108,6 +115,93 @@ class DetectorMaos:
         # retorna imagem
         return imagem
 
+    
+    def encontrar_posicoes(self, imagem):
+        """
+        Retorna as posições dos landmarks em pixels.
+        :param imagem: Imagem capturada (para pegar largura e altura).
+        :return: Lista de dicts com id e coordenadas (x, y) em pixels, ou [] se não houver mão.
+        """
+        posicoes = []
+
+        if self.resultado and self.resultado.hand_landmarks:
+            altura, largura, _ = imagem.shape  # Pega dimensões reais da imagem
+
+            for landmarks in self.resultado.hand_landmarks:
+                for id, lm in enumerate(landmarks):
+                    # lm.x e lm.y são valores de 0.0 a 1.0 — multiplicamos pelas dimensões reais
+                    cx = int(lm.x * largura)
+                    cy = int(lm.y * altura)
+                    posicoes.append({'id': id, 'x': cx, 'y': cy})
+
+        return posicoes
+    
+    def calcular_distancia(self, posicoes, id1, id2):
+        """Retorna a distância em pixels entre dois landmarks."""
+        p1 = next((p for p in posicoes if p['id'] == id1), None)
+        p2 = next((p for p in posicoes if p['id'] == id2), None)
+        if p1 and p2:
+            return math.sqrt((p1['x'] - p2['x'])**2 + (p1['y'] - p2['y'])**2)
+        return None
+
+    def desenhar_nomes_dedos(self, imagem, posicoes):
+        """Escreve o nome de cada dedo na ponta correspondente."""
+        for id, nome in self.NOMES_DEDOS.items():
+            ponto = next((p for p in posicoes if p['id'] == id), None)
+            if ponto:
+                cv2.putText(imagem, nome, (ponto['x'] - 30, ponto['y'] - 15),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+        return imagem
+    
+    def desenhar_hud(self, imagem, modo, distancia=None):
+        """
+        Desenha o HUD na câmera com o modo atual e informações úteis.
+        :param modo: String com o modo atual ('mouse' ou 'scroll')
+        :param distancia: Distância atual entre landmarks 4 e 8 (opcional)
+        """
+        altura, largura, _ = imagem.shape
+
+        # --- Fundo semi-transparente no topo --- #
+        overlay = imagem.copy()
+        cv2.rectangle(overlay, (0, 0), (largura, 50), (0, 0, 0), -1)
+        cv2.addWeighted(overlay, 0.4, imagem, 0.6, 0, imagem)  # transparência
+
+        # --- Modo atual --- #
+        if modo == 'scroll':
+            texto_modo = '[ SCROLL ]'
+            cor_modo = (0, 255, 180)   # verde água
+        elif modo == 'pinca':
+            texto_modo = '[ CLIQUE ]'
+            cor_modo = (0, 255, 0)     # verde
+        else:
+            texto_modo = '[ MOUSE ]'
+            cor_modo = (255, 255, 255) # branco
+
+        cv2.putText(imagem, texto_modo, (15, 33),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, cor_modo, 2)
+
+        # --- Distância da pinça (barra de progresso) --- #
+        if distancia is not None:
+            limiar = 47
+            barra_x = largura - 220
+            cv2.putText(imagem, 'PINCA', (barra_x, 20),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.45, (180, 180, 180), 1)
+
+            # fundo da barra
+            cv2.rectangle(imagem, (barra_x, 28), (barra_x + 150, 40), (60, 60, 60), -1)
+
+            # preenchimento — quanto menor a distância, mais cheia
+            progresso = max(0.0, min(1.0, 1 - (distancia / (limiar * 2))))
+            fill = int(150 * progresso)
+            cor_barra = (0, 255, 0) if distancia < limiar else (100, 200, 255)
+            cv2.rectangle(imagem, (barra_x, 28), (barra_x + fill, 40), cor_barra, -1)
+
+        # --- Instrução de saída --- #
+        cv2.putText(imagem, 'Q: sair', (largura - 75, altura - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, (120, 120, 120), 1)
+
+        return imagem
+    
 
 def main():
     # capturar o vídeo pela webcam
@@ -115,6 +209,11 @@ def main():
 
     # --- Instanciar a classe do detector --- #
     detector = DetectorMaos()
+
+    largura_cam = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    altura_cam = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    controlador = ControladorMouse(largura_cam, altura_cam)
 
     # realizar a captura
     while True:
@@ -126,14 +225,40 @@ def main():
 
         # --- Realizar a detecção das mãos --- #
         imagem = detector.encontrar_maos(imagem)
+        posicoes = detector.encontrar_posicoes(imagem)
 
+        if posicoes:
+            imagem = detector.desenhar_nomes_dedos(imagem, posicoes)
+            distancia = detector.calcular_distancia(posicoes, 4, 8)
+            
+            em_scroll = controlador.verificar_scroll(posicoes)  # checa scroll primeiro
+            
+            if not em_scroll:  # só move o mouse se não estiver scrollando
+                controlador.mover(posicoes, distancia)
+                controlador.verificar_clique(distancia)
+                
+             # --- Determina o modo para o HUD --- #
+            if em_scroll:
+                modo = 'scroll'
+            elif distancia and distancia < 47:
+                modo = 'pinca'
+            else:
+                modo = 'mouse'
+
+            imagem = detector.desenhar_hud(imagem, modo, distancia)
+
+        else:
+            # Mesmo sem mão detectada, mostra o HUD básico
+            imagem = detector.desenhar_hud(imagem, 'mouse')
+    
         # mostrar a imagem de captura
         cv2.imshow('Captura', imagem)
 
         # tempo de att da captura — pressione 'q' para sair
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-
+        
+        
     cap.release() ## Libera a captura de vídeo, ou seja, libera a webcam para que outros programas possam usá-la e para encerrar a captura de forma adequada.
     cv2.destroyAllWindows() ## Libera a captura de vídeo e fecha todas as janelas do OpenCV para encerrar o programa de forma limpa.
 
