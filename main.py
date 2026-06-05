@@ -18,8 +18,13 @@ def main():
     # realizar a captura
     while True:
         # obtenção da imagem
-        _, imagem = cap.read() ## Aqui estamos lendo um frame do vídeo capturado pela webcam. A função cap.read() retorna dois valores: o primeiro é um booleano que indica se a leitura foi bem-sucedida (True ou False), e o segundo é a imagem capturada (armazenada na variável imagem). O caractere de sublinhado (_) é usado para ignorar o valor booleano, já que não precisamos dele neste caso.
+        sucesso, imagem = cap.read() ## Aqui estamos lendo um frame do vídeo capturado pela webcam. A função cap.read() retorna dois valores: o primeiro é um booleano que indica se a 
+        # leitura foi bem-sucedida (True ou False), e o segundo é a imagem capturada (armazenada na variável imagem). O caractere de sublinhado (_) é usado para ignorar o valor booleano, 
+        # já que não precisamos dele neste case.
 
+        if not sucesso:
+            print("Erro ao capturar frame da webcam.")
+            break
         # inverter a imagem
         imagem = cv2.flip(imagem, 1)
 
@@ -45,7 +50,7 @@ def main():
             else:
                 modo = 'mouse'
 
-            imagem = detector.desenhar_hud(imagem, modo, distancia)
+            imagem = detector.desenhar_hud(imagem, modo, distancia, limiar=controlador.limiar_pinca)
 
         else:
             # Mesmo sem mão detectada, mostra o HUD básico

@@ -6,7 +6,7 @@ pyautogui.FAILSAFE = False  # desativa a trava de mover para o canto
 class ControladorMouse:
     """Classe responsável por controlar o mouse com os gestos da mão."""
 
-    def __init__(self, largura_cam, altura_cam, margem=100, limiar_pinca=40):
+    def __init__(self, largura_cam, altura_cam, margem=100, limiar_pinca=47):
         """
         :param largura_cam: Largura do frame da câmera em pixels.
         :param altura_cam: Altura do frame da câmera em pixels.
@@ -16,7 +16,6 @@ class ControladorMouse:
         self.larg_cam = largura_cam
         self.alt_cam = altura_cam
         self.margem = margem
-        self.limiar_pinca = limiar_pinca
         
         self.larg_tela, self.alt_tela = pyautogui.size()  # resolução real da tela
 
@@ -33,7 +32,11 @@ class ControladorMouse:
         self.pos_congelada = (0, 0)  # posição onde o cursor fica congelado
         
         # Valor ajustado para melhorar o clique
-        self.LIMIAR_PINCA = 47
+        self.limiar_pinca = 47
+        
+        # Modo pintura (desenho) - Cursor não congela na pinça
+        self.modo_pintura = False
+        self.pintando = False
 
 
 
@@ -85,7 +88,7 @@ class ControladorMouse:
         """
         agora = time.time()
 
-        if distancia and distancia < self.LIMIAR_PINCA:
+        if distancia and distancia < self.limiar_pinca:
             if not self.clicando and (agora - self.ultimo_clique) > 0.5:
                 pyautogui.click()
                 self.clicando = True
@@ -130,3 +133,7 @@ class ControladorMouse:
             return True  # está em modo scroll
 
         return False  # não está em modo scroll
+    
+    def alternar_modo_pintura(self):
+        self.modo_pintura = not self.modo_pintura
+        self.pintando = False  # reseta estado ao trocar

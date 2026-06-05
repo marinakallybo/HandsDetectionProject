@@ -153,11 +153,12 @@ class DetectorMaos:
                             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
         return imagem
     
-    def desenhar_hud(self, imagem, modo, distancia=None):
+    def desenhar_hud(self, imagem, modo, distancia=None, limiar=47):
         """
         Desenha o HUD na câmera com o modo atual e informações úteis.
         :param modo: String com o modo atual ('mouse' ou 'scroll')
         :param distancia: Distância atual entre landmarks 4 e 8 (opcional)
+        :param limiar: Limiar para a distância da pinça (opcional)
         """
         altura, largura, _ = imagem.shape
 
@@ -182,7 +183,7 @@ class DetectorMaos:
 
         # --- Distância da pinça (barra de progresso) --- #
         if distancia is not None:
-            limiar = self.LIMIAR_PINCA
+            limiar = limiar
             barra_x = largura - 220
             cv2.putText(imagem, 'PINCA', (barra_x, 20),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.45, (180, 180, 180), 1)
